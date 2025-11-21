@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Query Assistant</title>
+    <!-- <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}"> -->
+    <style>
+        
+        .chat-container {
+            max-width: 700px;
+            margin: 50px auto;
+            background-color: rgba(255, 255, 255, 0.504);
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        h1 {
+            color: #000000c7;
+            font-size: 32px;
+            margin: 0;
+        }
+
+        .theme-toggle {
+            cursor: pointer;
+            font-size: 24px;
+        }
+
+        .chat-box {
+            height: 400px;
+            overflow-y: auto;
+            padding: 10px;
+            border: 1px solid #ddd;
+            background-color: #fafafa3b;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .message-input-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .message-input {
+            width: 85%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            font-size: 16px;
+        }
+
+        .send-btn {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: #fff;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .send-btn:hover {
+            background-color: #45a049;
+        }
+        
+        .message-bubble {
+            max-width: 70%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 20px;
+            font-size: 16px;
+            line-height: 1.4;
+        }
+        
+        .user {
+            background-color: #e1f7d5;
+            margin-left: auto;
+            text-align: right;
+        }
+        
+        .ai {
+            background-color: #f1f1f1;
+            margin-right: auto;
+            text-align: left;
+        }
+        
+        .dark-mode {
+            background-color: #33333372;
+            color: #f4f4f9;
+        }
+        .dark-mode h1{
+            color: #ffffff;
+        }
+        
+        .dark-mode .chat-container {
+            background-color: #4444447a;
+        }
+        
+        .dark-mode .chat-box {
+            background-color: #55555580;
+            border-color: #666;
+            color: black;
+        }
+        
+        .dark-mode .message-input {
+            background-color: #666;
+            border-color: #888;
+            color: #f4f4f9;
+        }
+        
+        .dark-mode .send-btn {
+            background-color: #333;
+        }
+        
+        .dark-mode .send-btn:hover {
+            background-color: #222;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            /* background-color: #f4f4f9; */
+            color: #333;
+            margin: 0;
+            padding: 0;
+            transition: background-color 0.3s, color 0.3s;
+            
+            background: url('static/img.jpg'); 
+            background-size: cover;  
+            background-position: center;  
+            background-attachment: fixed; 
+        }
+        </style>
+</head>
+<body>
+    
+    <div class="chat-container">
+        <div class="header">
+            <h1>College Assistant</h1>
+            <span id="theme-toggle" class="theme-toggle">🌙</span>
+        </div>
+        <div id="chat-box" class="chat-box"></div>
+        
+        <div class="message-input-container">
+            <input type="text" id="query" class="message-input" placeholder="Type your question...">
+            <button id="submit-btn" class="send-btn">Send</button>
+        </div>
+    </div>
+
+    <script>
+        let conversationHistory = [];
+        let darkMode = false;
+
+        document.getElementById('theme-toggle').addEventListener('click', () => {
+            darkMode = !darkMode;
+            document.body.classList.toggle('dark-mode', darkMode);
+            document.getElementById('theme-toggle').textContent = darkMode ? '☀️' : '🌙';
+        });
+
+        function sendMessage() {
+            var query = document.getElementById('query').value;
+            if (query.trim() === "") return;
+
+            addMessage(query, 'user');
+            
+            document.getElementById('query').value = "";
+
+            conversationHistory.push({ sender: 'user', message: query });
+
+            fetch('/ask', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ query: query, history: conversationHistory })
+            })
+            .then(response => response.json())
+            .then(data => {
+                addMessage(data.response, 'ai');
+                conversationHistory.push({ sender: 'ai', message: data.response });
+            })
+            .catch(error => {
+                addMessage("Sorry, something went wrong. Please try again later.", 'ai');
+            });
+        }
+
+        function addMessage(message, sender) {
+            const chatBox = document.getElementById('chat-box');
+
+            const messageBubble = document.createElement('div');
+            messageBubble.classList.add('message-bubble', sender);
+            messageBubble.innerHTML = message;
+
+            chatBox.appendChild(messageBubble);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        document.getElementById('submit-btn').addEventListener('click', sendMessage);
+
+        document.getElementById('query').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                sendMessage();
+            }
+        });
+    </script>
+
+</body>
+</html>
